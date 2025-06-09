@@ -1,7 +1,12 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Query
+from pydantic import BaseModel
+from typing import List, Optional
+import json
+import openai  
 
 app = FastAPI()
 
-@app.get("/")
-async def root():
-    return {"message": "Hello, FastAPI!"}
+# test
+@app.get("/ping")
+async def ping():
+    return {"message": "pong"}
