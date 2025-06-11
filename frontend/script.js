@@ -1,63 +1,136 @@
-document.addEventListener('DOMContentLoaded',()=>{
-
-  const messagesBox=document.getElementById('messages')
-  const diffBox=document.getElementById('difficulty-buttons')
-  const quoteBlock=document.querySelector('.quote')
-  const userInput=document.getElementById('user-input')
-  const sendBtn=document.getElementById('send-btn')
-
-  let selectedTopic=null
-
-  function hideQuote(){if(quoteBlock)quoteBlock.style.display='none'}
-
-  function showMessage(text,sender='bot'){
-    const msg=document.createElement('div')
-    msg.className=`message ${sender}`
-    msg.textContent=text
-    messagesBox.appendChild(msg)
-    messagesBox.scrollTop=messagesBox.scrollHeight
-  }
-
-  document.querySelectorAll('.sidebar li').forEach(li=>{
-    li.addEventListener('click',()=>{
-      hideQuote()
-      document.querySelectorAll('.sidebar li').forEach(el=>el.classList.remove('active-topic'))
-      li.classList.add('active-topic')
-      selectedTopic=li.textContent.trim().toLowerCase().replace(/\s+/g,'_')
-      showMessage(`Topic chosen: ${li.textContent}. Pick a difficulty 👇`,'bot')
-      diffBox.style.display='flex'
-    })
-  })
-
-  window.chooseDifficulty=function(level){
-    hideQuote()
-    if(!selectedTopic){
-      showMessage('Please choose a topic first. 👈','bot')
-      return
-    }
-    diffBox.style.display='none'
-    showMessage(`Generating a ${level} task for ${selectedTopic}…`,'bot')
-    fetch(`/generate_task?topic=${encodeURIComponent(selectedTopic)}&difficulty=${encodeURIComponent(level)}`)
-      .then(async res=>{
-        const contentType=res.headers.get('content-type')||''
-        const task=contentType.includes('application/json')?(await res.json()).task:await res.text()
-        showMessage(`📝 Task:\n${task}`,'bot')
-      })
-      .catch(err=>{
-        console.error(err)
-        showMessage('⚠️ Could not fetch a task. Try again later.','bot')
-      })
-  }
-
-  function sendMessage(){
-    const msg=userInput.value.trim()
-    if(!msg)return
-    hideQuote()
-    showMessage(msg,'user')
-    userInput.value=''
-  }
-
-  userInput.addEventListener('keydown',e=>e.key==='Enter'&&sendMessage())
-  sendBtn.addEventListener('click',sendMessage)
-
-})
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family:'Prosto One',sans-serif;
+  background:#0f0f11;
+  color:#fff
+}
+.top-bar{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  background:#1a1a24;
+  padding:16px 24px;
+  border-bottom:1px solid #333
+}
+.logo{font-weight:600;font-size:20px}
+.profile{display:flex;align-items:center;gap:12px}
+.user-avatar{
+  font-size:20px;
+  background:#2f2f48;
+  border-radius:50%;
+  padding:6px;
+  width:34px;height:34px;
+  display:flex;justify-content:center;align-items:center;
+  color:#ffc107;
+  border:2px solid #4f46e5
+}
+.user-name{font-weight:500;font-size:16px}
+.logout{
+  background:#4f46e5;
+  border:none;
+  padding:8px 16px;
+  color:#fff;
+  border-radius:6px;
+  cursor:pointer;
+  transition:.2s
+}
+.logout:hover{background:#6366f1}
+.layout{display:flex;height:calc(100vh - 64px)}
+.sidebar{
+  width:200px;
+  background:#1a1a2b;
+  padding:20px;
+  border-right:1px solid #333
+}
+.sidebar h3{font-size:16px;margin-bottom:12px}
+.sidebar ul{list-style:none;padding:0}
+.sidebar li{
+  padding:10px;
+  border-radius:8px;
+  cursor:pointer;
+  background:#252536;
+  margin-bottom:6px;
+  transition:.2s
+}
+.sidebar li:hover{background:#2f2f48}
+.chat-area{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  background:#141419;
+  position:relative
+}
+.messages{
+  flex:1;
+  padding:20px;
+  overflow-y:auto;
+  display:flex;
+  flex-direction:column;
+  gap:10px
+}
+.message{
+  max-width:75%;
+  padding:12px 16px;
+  border-radius:16px;
+  line-height:1.4;
+  animation:fadeIn .3s ease
+}
+.user{
+  align-self:flex-end;
+  background:#4f46e5;
+  color:#fff;
+  border-bottom-right-radius:4px
+}
+.bot{
+  align-self:flex-start;
+  background:#22c55e;
+  color:#000;
+  border-bottom-left-radius:4px
+}
+.input-box{
+  display:flex;
+  border-top:1px solid #333;
+  padding:12px;
+  background:#1a1a2b
+}
+input{
+  flex:1;
+  padding:12px;
+  background:#101015;
+  border:none;
+  color:#fff;
+  border-radius:6px;
+  margin-right:12px
+}
+button{
+  background:#4f46e5;
+  border:none;
+  padding:12px 20px;
+  color:#fff;
+  border-radius:6px;
+  cursor:pointer
+}
+.extra{
+  width:220px;
+  background:#1a1a2b;
+  padding:20px;
+  border-left:1px solid #333
+}
+.extra h3{font-size:16px;margin-bottom:12px}
+.extra ul{list-style:none;padding:0}
+.extra li{margin-bottom:10px;font-size:14px}
+.quote{
+  position: absolute;
+  font-size:24px;
+  top:50%;
+  left:50%;
+  opacity:0.1;
+  transform: translate(-50%, -50%);
+  text-align:center;
+  user-select:none
+}
+@keyframes fadeIn{
+  from{opacity:0;transform:translateY(10px)}
+  to{opacity:1;transform:translateY(0)}
+}
