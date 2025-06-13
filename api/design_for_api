@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Python Task Bot</title>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 700px; margin: 2em auto; padding: 0 1em; }
+    label, select, textarea, button { display: block; margin: 0.5em 0; width: 100%; font-size: 1rem; }
+    textarea { height: 200px; font-family: monospace; }
+    button { padding: 0.6em 1.2em; border: none; border-radius: 4px; background: #007bff; color: #fff; }
+    button:disabled { opacity: 0.6; cursor: not-allowed; }
+    .task-card {
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+      padding: 20px;
+      margin-top: 1.5em;
+      line-height: 1.6;
+    }
+    .card-header { font-weight: bold; margin-bottom: 0.5em; }
+  </style>
+</head>
+<body>
+  <h1>Python Task Bot</h1>
+
+  <div style="text-align: center; margin: 1em 0;">
+  <img
+    src="/static/dead_python.png"
+    alt="Мультяшный умерший питон"
+    style="max-width: 100%; height: auto;"
+  />
+</div>
+
+  <!-- Task generation UI -->
+  <label for="topic">Topic:</label>
+  <select id="topic">
+    <option>Polymorphism</option>
+    <option>Recursion</option>
+    <option>Data Structures</option>
+    <option>OOP</option>
+  </select>
+  <label for="difficulty">Difficulty:</label>
+  <select id="difficulty">
+    <option>Easy</option>
+    <option>Medium</option>
+    <option>Hard</option>
+  </select>
+  <button id="generateBtn">Generate Task</button>
+  <div id="taskResult" class="task-card"><em>Select options and generate a task.</em></div>
+
+  <!-- Code submission UI -->
+  <div id="codeSection" style="display:none;">
+    <div class="card-header">Your Solution:</div>
+    <textarea id="userCode" placeholder="Paste your code here..."></textarea>
+    <button id="submitCodeBtn">Submit Code</button>
+    <div id="evalResult" class="task-card"><em>Evaluation result will appear here.</em></div>
+  </div>
+
+    <script>
+    const genBtn = document.getElementById('generateBtn');
+    const taskResult = document.getElementById('taskResult');
+    const codeSection = document.getElementById('codeSection');
+    const submitBtn = document.getElementById('submitCodeBtn');
+    const evalResult = document.getElementById('evalResult');
+
+    async function generateTask() {
+      genBtn.disabled = true;
+      taskResult.innerHTML = '<em>Loading task...</em>';
+      const topic = document.getElementById('topic').value;
+      const difficulty = document.getElementById('difficulty').value;
+      const res = await fetch('/send_message', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ topic, difficulty }),
+        body: JSON.stringify({ topic, difficulty })
+      });
+      const { task, error } = await res.json();
+      taskResult.innerHTML = marked.parse(task || `**Error:** ${error}`);
+      genBtn.disabled = false;
+      codeSection.style.display = 'block';
+    }
+
+    async function submitCode() {
+      submitBtn.disabled = true;
+      evalResult.innerHTML = '<em>Evaluating...</em>';
+      const code = document.getElementById('userCode').value;
+      const taskText = taskResult.textContent;
+
+      try {
+        const res = await fetch('/evaluate_code', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ task: taskText, code })
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+        const { evaluation = '', error } = await res.json();
+        const raw = evaluation || `**Error:** ${error || 'Unknown error'}`;
+
+        // Нормализация переносов
+        const normalized = raw.replace(/\r\n/g, '\n');
+
+        // 1) Ищем любой блок ```...``` (с json-меткой или без)
+        const fenceMatch = normalized.match(/```(?:json)?\s*([\s\S]*?)```/i);
+        const jsonText = fenceMatch
+          ? fenceMatch[1].trim()
+          : normalized.trim();
+
+        let resultObj;
+        try {
+          resultObj = JSON.parse(jsonText);
+        } catch (parseErr) {
+          console.warn('Не удалось распарсить JSON:', parseErr, jsonText);
+          // если не JSON — рендерим как Markdown
+          evalResult.innerHTML = marked.parse(raw);
+          return;
+        }
+
+        // 2) Читабельный вывод
+        evalResult.innerHTML = `
+          <div><strong>Correct:</strong> ${resultObj.correct ? 'Yes' : 'No'}</div>
+          <div><strong>Feedback:</strong> ${resultObj.feedback}</div>
+        `;
+      } catch (err) {
+        console.error(err);
+        evalResult.innerHTML = `<p style="color: red;">${err.message}</p>`;
+      } finally {
+        submitBtn.disabled = false;
+      }
+    }
+
+    genBtn.addEventListener('click', generateTask);
+    submitBtn.addEventListener('click', submitCode);
+  </script>
+</body>
+</html>
