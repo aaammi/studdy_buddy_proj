@@ -4,14 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>🐍 Python Practice</title>
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Prosto+One&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
-  <style>
-    .message.bot{white-space:pre-wrap}
-    .sidebar li.active-topic{background:#3a3a3a;color:#4ade80}
-  </style>
+  <link rel="stylesheet" href="style1.css">
   <script src="script.js" defer></script>
 </head>
 <body>
@@ -20,7 +17,7 @@
   <div class="profile">
     <div class="user-avatar">👩‍🎓</div>
     <div class="user-name">Anna</div>
-    <button class="logout">Logout</button>
+    <button class="logout">Log out</button>
   </div>
 </div>
 
@@ -29,38 +26,43 @@
     <h3>📘 Course Topics</h3>
     <ul>
       <li>Introduction</li>
-      <li>Variables and Types</li>
-      <li>Conditions</li>
-      <li>Loops</li>
-      <li>Functions</li>
-      <li>Arrays</li>
-      <li>Files</li>
-      <li>OOP</li>
-      <li>Practice</li>
+      <li>Basic Control Statements</li>
+      <li>Functions and Modules</li>
+      <li>Testing and Debugging</li>
+      <li>Lists and Tuples</li>
+      <li>File I/O</li>
+      <li>Exception Handling</li>
+      <li>Working with Numbers</li>
+      <li>Working with Strings</li>
+      <li>Working with Dates and Times</li>
+      <li>Dictionaries</li>
+      <li>Recursion and Algorithms</li>
+      <li>Object Oriented Programming</li>
+      <li>Graphical User Interfaces</li>
     </ul>
   </div>
 
   <div class="chat-area">
-    <div class="quote">💡Code is poetry in logic</div>
+    <div class="quote">💡 “Code is poetry in logic”</div>
     <div class="messages" id="messages"></div>
     <div class="input-box">
-      <input type="text" id="user-input" placeholder="Type your message...">
-      <button id="send-btn">Send</button>
+      <textarea id="user-input" placeholder="Let's code!"></textarea>
+      <button id="submit-code-btn">Send code</button>
     </div>
   </div>
 
   <div class="extra">
     <h3>🎯 Difficulty</h3>
-    <div id="difficulty-buttons" style="display:none;flex-direction:column;gap:10px">
+    <div id="difficulty-buttons">
       <button onclick="chooseDifficulty('beginner')">🟢 Beginner</button>
       <button onclick="chooseDifficulty('medium')">🟡 Medium</button>
       <button onclick="chooseDifficulty('hard')">🔴 Hard</button>
     </div>
 
-    <h3>📌 Tips</h3>
-    <ul>
-      <li>Use <code>input()</code> for input</li>
-    </ul>
+    <div class="hint-wrapper">
+      <button id="hint-btn" class="hint-btn" disabled>💡 Hint</button>
+      <span id="hint-help" class="hint-help">?</span>
+    </div>
   </div>
 </div>
 </body>
