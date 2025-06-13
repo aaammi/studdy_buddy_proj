@@ -79,7 +79,7 @@ async def evaluate_code(request: Request):
 # 3. Serve frontend
 @app.get('/', response_class=FileResponse)
 async def root():
-    return FileResponse('static/Gener.html')
+    return FileResponse('design_for_api.html')
 
 # 4. Static files
 app.mount('/static', StaticFiles(directory='static'), name='static')
