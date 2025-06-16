@@ -28,16 +28,18 @@ document.addEventListener('DOMContentLoaded', () => {
   function showCodeMessage(code) {
     const msg = document.createElement('div');
     msg.className = 'message user';
+
     const pre = document.createElement('pre');
     pre.textContent = code;
+
     msg.appendChild(pre);
     messagesBox.appendChild(msg);
     messagesBox.scrollTop = messagesBox.scrollHeight;
   }
 
-  async function fetchText(url, fallback) {
+  async function fetchText(url, fallback, options = {}) {
     try {
-      const res = await fetch(url);
+      const res = await fetch(url, options);
       if (!res.ok) {
         const errText = await res.text();
         return `Error ${res.status}: ${errText}`;
@@ -78,11 +80,10 @@ document.addEventListener('DOMContentLoaded', () => {
       diffBox.style.display = 'flex';
     });
   });
-
   window.chooseDifficulty = async level => {
     hideQuote();
     if (!selectedTopic) {
-      showMessage('❗️ Please select topic first', 'bot');
+      showMessage('❗ Please select topic first', 'bot');
       return;
     }
     currentDifficulty = level;
@@ -100,11 +101,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   submitCodeBtn.addEventListener('click', async () => {
     if (!selectedTopic) {
-      showMessage('❗️ Please select topic before sending code', 'bot');
+      showMessage('❗ Please select topic before sending code', 'bot');
       return;
     }
     if (!currentDifficulty) {
-      showMessage('❗️ Please select difficulty before sending code', 'bot');
+      showMessage('❗ Please select difficulty before sending code', 'bot');
       return;
     }
     const code = userInput.value.trim();
@@ -117,18 +118,32 @@ document.addEventListener('DOMContentLoaded', () => {
     userInput.value = '';
     userInput.style.height = 'auto';
 
-    const response = await fetch(`/submit_code?topic=${encodeURIComponent(selectedTopic)}&difficulty=${encodeURIComponent(currentDifficulty)}&code=${encodeURIComponent(code)}`);
-    const text = await response.text();
-    showMessage(response.ok ? text : `Error ${response.status}: ${text}`, 'bot');
+    // Отправляем код через POST запрос
+    const responseText = await fetchText(
+      '/submit_code',
+      'Failed to submit code.',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          topic: selectedTopic,
+          difficulty: currentDifficulty,
+          code: code
+        })
+      }
+    );
+    showMessage(responseText, 'bot');
   });
 
   hintBtn.addEventListener('click', async () => {
     if (!selectedTopic) {
-      showMessage('❗️ Please select topic first', 'bot');
+      showMessage('❗ Please select topic first', 'bot');
       return;
     }
     if (!currentDifficulty) {
-      showMessage('❗️ Please select difficulty first', 'bot');
+      showMessage('❗ Please select difficulty first', 'bot');
       return;
     }
     showMessage('💡 Hint please! 🥺', 'user');
@@ -148,7 +163,8 @@ document.addEventListener('DOMContentLoaded', () => {
     hintWrapper.appendChild(tip);
     setTimeout(() => tip.remove(), 3000);
   }
-  hintHelp.addEventListener('click', () => {
-    if (hintBtn.disabled) showHintTooltip('❗️ Send code to get a hint');
+hintHelp.addEventListener('click', () => {
+    if (hintBtn.disabled) showHintTooltip('❗ Send code to get a hint');
   });
 });
+
