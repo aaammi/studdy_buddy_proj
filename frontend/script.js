@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let currentDifficulty = null;
   let taskShown         = false;
   let answerSent        = false;
+  let currentTaskText   = '';
 
   function hideQuote() {
     if (quoteBlock) quoteBlock.style.display = 'none';
@@ -67,12 +68,22 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  //Function to clear chat messages
+  function clearChat() {
+    messagesBox.innerHTML = '';
+    taskShown = false;
+    answerSent = false;
+    hintBtn.disabled = true;
+    if (quoteBlock) quoteBlock.style.display = 'none';
+  }
+
   document.querySelectorAll('.sidebar li').forEach(li => {
     li.addEventListener('click', () => {
       hideQuote();
       document.querySelectorAll('.sidebar li').forEach(el => el.classList.remove('active-topic'));
       li.classList.add('active-topic');
       selectedTopic = li.textContent.trim().toLowerCase().replace(/\s+/g, '_');
+      clearChat();
       taskShown = answerSent = false;
       hintBtn.disabled = true;
       showMessage(li.textContent, 'user');
@@ -90,11 +101,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const labels = { beginner: '🟢 Beginner', medium: '🟡 Medium', hard: '🔴 Hard' };
     showMessage(labels[level], 'user');
     showMessage('Generating task…', 'bot');
-    const task = await fetchText(
+    const problem = await fetchText(
       `/generate_task?topic=${encodeURIComponent(selectedTopic)}&difficulty=${encodeURIComponent(level)}`,
       'Не удалось получить задачу.'
     );
-    showMessage(`📝 Task:\n${task}`, 'bot');
+    currentTaskText = problem; 
+    showMessage(`📝 Task:\n${problem}`, 'bot');
     taskShown = answerSent = false;
     hintBtn.disabled = true;
   };
@@ -119,23 +131,29 @@ document.addEventListener('DOMContentLoaded', () => {
     userInput.style.height = 'auto';
 
     // Отправляем код через POST запрос
-    const responseText = await fetchText(
-      '/submit_code',
-      'Failed to submit code.',
-      {
+    const response = await fetch('/evaluate_code', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+            'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          topic: selectedTopic,
-          difficulty: currentDifficulty,
-          code: code
+          task: currentTaskText,  
+          code: code    
         })
-      }
-    );
-    showMessage(responseText, 'bot');
+    });
+    //тут мои попытки отобразить ответ на экране(чтобы понять что оно работает)
+     const result = await response.json();
+let feedback = result.evaluation;
+
+try {
+  const parsed = JSON.parse(result.evaluation);
+  feedback = parsed.feedback
+} catch (e) {
+}
+
+showMessage(feedback, 'bot');
   });
+  //тут мои потуги с отображением ответа заканчиваются
 
   hintBtn.addEventListener('click', async () => {
     if (!selectedTopic) {
