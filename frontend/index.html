@@ -1,74 +1,111 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>🐍 Python Practice</title>
 
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Prosto+One&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/static/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Prosto+One&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="style1.css" />
+  <script src="script.js" defer></script>
 </head>
-
 <body>
-  <div class="top-bar">
-    <div class="logo">🐍 Python Practice</div>
-    <div class="profile">
-      <div class="user-avatar">👩🎓</div>
-      <div class="user-name">Anna</div>
-      <button class="logout">Log out</button>
+<div class="top-bar">
+  <div class="logo">🐍 Python Practice</div>
+
+  <div class="right-controls">
+    <!-- профиль (показывается после входа) -->
+    <div id="profile" class="profile">
+      <div id="user-avatar" class="user-avatar">👤</div>
+      <div id="user-name" class="user-name"></div>
+      <button id="logout-btn" class="logout">Log out</button>
+    </div>
+
+    <button id="login-btn" class="login-btn">Sign up</button>
+  </div>
+</div>
+
+<div id="admin-banner" class="admin-banner hidden">
+  You are logged in as an administrator
+</div>
+
+<div class="layout">
+  <div class="sidebar">
+    <h3>📘 Course Topics</h3>
+
+    <button id="upload-syllabus-btn" class="upload-btn" style="display: none">
+      Upload syllabus
+    </button>
+    <input type="file" id="syllabus-file" accept=".txt" style="display: none" />
+
+    <ul id="topics-list">
+      <li>Introduction</li>
+      <li>Basic Control Statements</li>
+      <li>Functions and Modules</li>
+      <li>Testing and Debugging</li>
+      <li>Lists and Tuples</li>
+      <li>File I/O</li>
+      <li>Exception Handling</li>
+      <li>Working with Numbers</li>
+      <li>Working with Strings</li>
+      <li>Working with Dates and Times</li>
+      <li>Dictionaries</li>
+      <li>Recursion and Algorithms</li>
+      <li>Object Oriented Programming</li>
+      <li>Graphical User Interfaces</li>
+    </ul>
+  </div>
+
+  <div class="chat-area">
+    <div class="quote">💡 “Code is poetry in logic”</div>
+    <div class="messages" id="messages"></div>
+
+    <div class="input-box">
+      <textarea id="user-input" placeholder="Let's code!"></textarea>
+      <button id="submit-code-btn">Send code</button>
     </div>
   </div>
 
-  <div class="layout">
-    <div class="sidebar">
-      <h3>📘 Course Topics</h3>
-      <ul>
-        <li>Introduction</li>
-        <li>Basic Control Statements</li>
-        <li>Functions and Modules</li>
-        <li>Testing and Debugging</li>
-        <li>Lists and Tuples</li>
-        <li>File I/O</li>
-        <li>Exception Handling</li>
-        <li>Working with Numbers</li>
-        <li>Working with Strings</li>
-        <li>Working with Dates and Times</li>
-        <li>Dictionaries</li>
-        <li>Recursion and Algorithms</li>
-        <li>Object Oriented Programming</li>
-        <li>Graphical User Interfaces</li>
-      </ul>
+  <div class="extra">
+    <h3>🎯 Difficulty</h3>
+    <div id="difficulty-buttons">
+      <button onclick="chooseDifficulty('beginner')">🟢 Beginner</button>
+      <button onclick="chooseDifficulty('medium')">🟡 Medium</button>
+      <button onclick="chooseDifficulty('hard')">🔴 Hard</button>
     </div>
 
-    <div class="chat-area">
-      <div class="quote">💡 “Code is poetry in logic”</div>
-      <div class="messages" id="messages"></div>
-      <div class="input-box">
-        <textarea id="user-input" placeholder="Let's code!"></textarea>
-        <button id="submit-code-btn">Send code</button>
-      </div>
-    </div>
-
-    <div class="extra">
-      <h3>🎯 Difficulty</h3>
-      <div id="difficulty-buttons">
-        <button onclick="chooseDifficulty('beginner')">🟢 Beginner</button>
-        <button onclick="chooseDifficulty('medium')">🟡 Medium</button>
-        <button onclick="chooseDifficulty('hard')">🔴 Hard</button>
-      </div>
-
-      <div class="hint-wrapper">
-        <button id="hint-btn" class="hint-btn" disabled>💡 Hint</button>
-        <span id="hint-help" class="hint-help">?</span>
-      </div>
+    <div class="hint-wrapper">
+      <button id="hint-btn" class="hint-btn" disabled>💡 Hint</button>
+      <span id="hint-help" class="hint-help">?</span>
     </div>
   </div>
+</div>
 
-  <script src="/static/script.js"></script>
+<div id="login-modal" class="modal hidden">
+  <div class="modal-content">
+    <span id="modal-close" class="modal-close">&times;</span>
+
+    <div class="tab-selector">
+      <button id="user-tab" class="tab active">User</button>
+      <button id="admin-tab" class="tab">Admin</button>
+    </div>
+
+    <form id="user-form" class="login-form">
+      <input type="text" id="user-name-input" placeholder="Name / Nickname" required />
+      <input type="email" id="user-email-input" placeholder="Email" required />
+      <input type="password" id="user-password-input" placeholder="Password" required />
+      <button type="submit" class="login-submit">Login</button>
+    </form>
+
+    <form id="admin-form" class="login-form hidden">
+      <input type="password" id="admin-password-input" placeholder="Admin password" required />
+      <button type="submit" class="login-submit">Enter</button>
+      <div id="admin-attempts" class="attempts-info"></div>
+    </form>
+  </div>
+</div>
 </body>
-
 </html>
-
