@@ -199,24 +199,67 @@ document.addEventListener('DOMContentLoaded', () => {
 
   uploadBtn.addEventListener('click', () => fileInput.click());
 
-  fileInput.addEventListener('change', e => {
-    const f = e.target.files[0];
-    if (!f) return;
-    if (!f.name.endsWith('.txt')) return alert('Only .txt files allowed');
-    const reader = new FileReader();
-    reader.onload = () => {
-      const lines = reader.result.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
-      if (!lines.length) return alert('File is empty');
-      updateTopicList(lines);
-      fetch('/save_syllabus', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ topics: lines })
-      }).catch(() => {});
-      alert('Syllabus uploaded ✅');
-    };
-    reader.readAsText(f);
-  });
+fileInput.setAttribute('accept', '.txt,application/pdf');
+
+fileInput.addEventListener('change', async e => {
+  const f = e.target.files[0];
+  if (!f) return;
+
+  const name = f.name.toLowerCase();
+  if (!name.endsWith('.txt') && !name.endsWith('.pdf')) {
+    return alert('Only .txt and .pdf files allowed');
+  }
+  let text;
+  if (name.endsWith('.txt')) {
+    text = await new Promise(res => {
+      const r = new FileReader();
+      r.onload = () => res(r.result);
+      r.readAsText(f);
+    });
+  } else {
+    const buf = await f.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+    let full = '';
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const content = await page.getTextContent();
+      full += content.items.map(it => it.str).join(' ') + '\n';
+    }
+    text = full;
+  }
+
+  const idx = text.search(/Tentative Course Schedule:/i);
+  const scheduleText = idx >= 0 ? text.slice(idx) : text;
+
+  const endIdx = scheduleText.search(/Means of Evaluation:/i);
+  const scheduleBlock = endIdx >= 0
+    ? scheduleText.slice(0, endIdx)
+    : scheduleText;
+
+  const re = /Week\s*\d+\s+(.+?)(?=Week\s*\d+\s+|$)/gis;
+  const topics = [];
+  let m;
+  while ((m = re.exec(scheduleBlock)) !== null) {
+    topics.push(m[1].trim());
+  }
+
+
+  if (topics.length === 0) {
+    console.log('Parsed chunk:', scheduleText);
+    return alert('No course topics found in the uploaded file.');
+  }
+
+  // 5) Обновляем интерфейс и шлём на сервер
+  updateTopicList(topics);
+  fetch('/save_syllabus', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ topics })
+  }).catch(() => {});
+  alert('Syllabus uploaded ✅');
+});
+
+
 
   if (adminFails >= 3) {
     adminAttemptsInfo.textContent = 'UI locked after 3 failed attempts.';
