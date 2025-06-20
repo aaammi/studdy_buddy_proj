@@ -1,39 +1,47 @@
 document.addEventListener('DOMContentLoaded', () => {
-  const messagesBox   = document.getElementById('messages');
-  const diffBox       = document.getElementById('difficulty-buttons');
-  const quoteBlock    = document.querySelector('.quote');
-  const userInput     = document.getElementById('user-input');
+  const messagesBox = document.getElementById('messages');
+  const diffBox = document.getElementById('difficulty-buttons');
+  const quoteBlock = document.querySelector('.quote');
+  const userInput = document.getElementById('user-input');
   const submitCodeBtn = document.getElementById('submit-code-btn');
-  const hintBtn       = document.getElementById('hint-btn');
-  const hintHelp      = document.getElementById('hint-help');
-  const hintWrapper   = document.querySelector('.hint-wrapper');
-  const topicsList    = document.getElementById('topics-list');
+  const hintBtn = document.getElementById('hint-btn');
+  const hintHelp = document.getElementById('hint-help');
+  const hintWrapper = document.querySelector('.hint-wrapper');
+  const topicsList = document.getElementById('topics-list');
 
-  const loginBtn   = document.getElementById('login-btn');
+  const loginBtn = document.getElementById('login-btn');
   const loginModal = document.getElementById('login-modal');
   const modalClose = document.getElementById('modal-close');
-  const userTab    = document.getElementById('user-tab');
-  const adminTab   = document.getElementById('admin-tab');
-  const userForm   = document.getElementById('user-form');
-  const adminForm  = document.getElementById('admin-form');
+  const userTab = document.getElementById('user-tab');
+  const adminTab = document.getElementById('admin-tab');
+  const userForm = document.getElementById('user-form');
+  const adminForm = document.getElementById('admin-form');
   const adminAttemptsInfo = document.getElementById('admin-attempts');
 
   const profileDiv = document.getElementById('profile');
   const userNameSp = document.getElementById('user-name');
-  const logoutBtn  = document.getElementById('logout-btn');
-  const adminBanner= document.getElementById('admin-banner');
+  const logoutBtn = document.getElementById('logout-btn');
+  const adminBanner = document.getElementById('admin-banner');
 
-  const uploadBtn  = document.getElementById('upload-syllabus-btn');
-  const fileInput  = document.getElementById('syllabus-file');
+  const uploadBtn = document.getElementById('upload-syllabus-btn');
+  const fileInput = document.getElementById('syllabus-file');
 
-  let selectedTopic     = null;
+  let selectedTopic = null;
   let currentDifficulty = null;
-  let taskShown         = false;
-  let answerSent        = false;
-
-  let isLoggedIn = false;
-  let isAdmin    = false;
+  let isAdmin = false;
   let adminFails = parseInt(localStorage.getItem('adminFailedAttempts') || '0', 10);
+  let syllabusLoaded = false;
+
+  profileDiv.style.display = 'none';
+  userInput.disabled = true;
+  submitCodeBtn.disabled = true;
+  hintBtn.disabled = true;
+  topicsList.innerHTML = '';
+  topicsList.style.display = 'none';
+  const noTopicsMsg = document.createElement('div');
+  noTopicsMsg.textContent = '⏳ Please wait until the administrator uploads the syllabus 😔';
+  noTopicsMsg.style.cssText = 'color:#999;text-align:center;margin-top:16px;font-size:14px;';
+  topicsList.parentNode.insertBefore(noTopicsMsg, topicsList.nextSibling);
 
   const hideQuote = () => quoteBlock && (quoteBlock.style.display = 'none');
 
@@ -60,61 +68,79 @@ document.addEventListener('DOMContentLoaded', () => {
       const r = await fetch(url, options);
       if (!r.ok) return `Error ${r.status}: ${await r.text()}`;
       const ct = r.headers.get('content-type') || '';
-      return ct.includes('application/json')
-        ? (await r.json()).message || 'OK'
-        : await r.text();
-    } catch (err) { return `Network error: ${err.message}`; }
+      return ct.includes('application/json') ? (await r.json()).message || 'OK' : await r.text();
+    } catch (err) {
+      return `Network error: ${err.message}`;
+    }
   };
 
-  function updateTopicList(arr) {
+  const updateTopicList = arr => {
+    syllabusLoaded = arr.length > 0;
     topicsList.innerHTML = '';
-    arr.forEach(line => {
+    if (!syllabusLoaded) {
+      topicsList.style.display = 'none';
+      noTopicsMsg.style.display = 'block';
+      userInput.disabled = true;
+      submitCodeBtn.disabled = true;
+      hintBtn.disabled = true;
+      diffBox.style.display = 'none';
+      selectedTopic = null;
+      return;
+    }
+    topicsList.style.display = 'block';
+    noTopicsMsg.style.display = 'none';
+    userInput.disabled = false;
+    submitCodeBtn.disabled = false;
+    arr.forEach(t => {
       const li = document.createElement('li');
-      li.textContent = line.trim();
+      li.textContent = t.trim();
       topicsList.appendChild(li);
       li.addEventListener('click', () => handleTopic(li));
     });
-  }
+  };
 
-  function handleTopic(li) {
+  const handleTopic = li => {
+    if (!syllabusLoaded) return;
     hideQuote();
     document.querySelectorAll('.sidebar li').forEach(el => el.classList.remove('active-topic'));
     li.classList.add('active-topic');
     selectedTopic = li.textContent.trim().toLowerCase().replace(/\s+/g, '_');
-    taskShown = answerSent = false;
     hintBtn.disabled = true;
     showMessage(li.textContent, 'user');
     showMessage('Select difficulty 👇', 'bot');
     diffBox.style.display = 'flex';
-  }
+  };
 
   fetch('/get_syllabus')
-    .then(r => r.ok ? r.json() : null)
-    .then(data => {
-      if (data && Array.isArray(data.topics) && data.topics.length) updateTopicList(data.topics);
+    .then(r => (r.ok ? r.json() : null))
+    .then(d => {
+      if (d && Array.isArray(d.topics)) updateTopicList(d.topics);
     })
-    .catch(() => { });
+    .catch(() => {});
 
-
-  const openModal  = () => loginModal.classList.remove('hidden');
+  const openModal = () => loginModal.classList.remove('hidden');
   const closeModal = () => loginModal.classList.add('hidden');
   loginBtn.addEventListener('click', openModal);
   modalClose.addEventListener('click', closeModal);
 
   userTab.addEventListener('click', () => {
-    userTab.classList.add('active');   adminTab.classList.remove('active');
-    userForm.classList.remove('hidden'); adminForm.classList.add('hidden');
+    userTab.classList.add('active');
+    adminTab.classList.remove('active');
+    userForm.classList.remove('hidden');
+    adminForm.classList.add('hidden');
   });
   adminTab.addEventListener('click', () => {
-    adminTab.classList.add('active'); userTab.classList.remove('active');
-    adminForm.classList.remove('hidden'); userForm.classList.add('hidden');
+    adminTab.classList.add('active');
+    userTab.classList.remove('active');
+    adminForm.classList.remove('hidden');
+    userForm.classList.add('hidden');
   });
 
   userForm.addEventListener('submit', e => {
     e.preventDefault();
     const name = document.getElementById('user-name-input').value.trim();
     const mail = document.getElementById('user-email-input').value.trim();
-    const pwd  = document.getElementById('user-password-input').value.trim();
+    const pwd = document.getElementById('user-password-input').value.trim();
     if (!name || !mail || !pwd) return;
     finishLogin(name, false);
   });
@@ -124,36 +150,37 @@ document.addEventListener('DOMContentLoaded', () => {
     if (adminFails >= 3) return;
     const pwd = document.getElementById('admin-password-input').value.trim();
     if (pwd === 'admin123') {
-      adminFails = 0; localStorage.setItem('adminFailedAttempts', '0');
+      adminFails = 0;
+      localStorage.setItem('adminFailedAttempts', '0');
       adminAttemptsInfo.textContent = '';
       finishLogin('Admin', true);
     } else {
-      adminFails += 1; localStorage.setItem('adminFailedAttempts', adminFails);
+      adminFails += 1;
+      localStorage.setItem('adminFailedAttempts', adminFails);
       adminAttemptsInfo.textContent = `Wrong password (${adminFails}/3)`;
       if (adminFails >= 3) {
         adminAttemptsInfo.textContent = 'UI locked after 3 failed attempts.';
-        adminForm.querySelector('input').disabled  = true;
+        adminForm.querySelector('input').disabled = true;
         adminForm.querySelector('button').disabled = true;
       }
     }
   });
 
   const finishLogin = (name, admin) => {
-    isLoggedIn = true; isAdmin = admin;
+    isAdmin = admin;
     profileDiv.style.display = 'flex';
-    userNameSp.textContent   = name;
-    loginBtn.style.display   = 'none';
+    userNameSp.textContent = name;
+    loginBtn.style.display = 'none';
     adminBanner.classList.toggle('hidden', !admin);
-    uploadBtn.style.display  = admin ? 'block' : 'none';
+    uploadBtn.style.display = admin ? 'block' : 'none';
     closeModal();
   };
 
   logoutBtn.addEventListener('click', () => {
-    isLoggedIn = isAdmin = false;
     profileDiv.style.display = 'none';
-    loginBtn.style.display   = 'inline-block';
+    loginBtn.style.display = 'inline-block';
     adminBanner.classList.add('hidden');
-    uploadBtn.style.display  = 'none';
+    uploadBtn.style.display = 'none';
   });
 
   uploadBtn.addEventListener('click', () => fileInput.click());
@@ -162,12 +189,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const f = e.target.files[0];
     if (!f) return;
     if (!f.name.endsWith('.txt')) return alert('Only .txt files allowed');
-
     const reader = new FileReader();
     reader.onload = () => {
       const lines = reader.result.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
       if (!lines.length) return alert('File is empty');
-
       updateTopicList(lines);
       fetch('/save_syllabus', {
         method: 'POST',
@@ -181,7 +206,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (adminFails >= 3) {
     adminAttemptsInfo.textContent = 'UI locked after 3 failed attempts.';
-    adminForm.querySelector('input').disabled  = true;
+    adminForm.querySelector('input').disabled = true;
     adminForm.querySelector('button').disabled = true;
   }
 
@@ -191,48 +216,51 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   userInput.addEventListener('keydown', e => {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitCodeBtn.click(); }
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      submitCodeBtn.click();
+    }
   });
 
   window.chooseDifficulty = async level => {
+    if (!syllabusLoaded) return;
     hideQuote();
     if (!selectedTopic) return showMessage('❗️ Please select topic first', 'bot');
-
     currentDifficulty = level;
-    const labels = { beginner:'🟢 Beginner', medium:'🟡 Medium', hard:'🔴 Hard' };
+    const labels = { beginner: '🟢 Beginner', medium: '🟡 Medium', hard: '🔴 Hard' };
     showMessage(labels[level], 'user');
     showMessage('Generating task…', 'bot');
-
     const task = await fetchText(
       `/generate_task?topic=${encodeURIComponent(selectedTopic)}&difficulty=${encodeURIComponent(level)}`,
-      'Не удалось получить задачу.'
+      'Failed to generate the task!'
     );
     showMessage(`📝 Task:\n${task}`, 'bot');
-    taskShown = answerSent = false;
     hintBtn.disabled = true;
   };
 
   submitCodeBtn.addEventListener('click', async () => {
-    if (!selectedTopic)     return showMessage('❗️ Please select topic before sending code', 'bot');
+    if (!syllabusLoaded) return;
+    if (!selectedTopic) return showMessage('❗️ Please select topic before sending code', 'bot');
     if (!currentDifficulty) return showMessage('❗️ Please select difficulty before sending code', 'bot');
-
     const code = userInput.value.trim();
     if (!code) return;
-
-    hideQuote(); showCodeMessage(code); hintBtn.disabled = false;
-    userInput.value = ''; userInput.style.height = 'auto';
-
+    hideQuote();
+    showCodeMessage(code);
+    hintBtn.disabled = false;
+    userInput.value = '';
+    userInput.style.height = 'auto';
     const resp = await fetchText('/submit_code', 'Failed to submit code.', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ topic:selectedTopic, difficulty:currentDifficulty, code })
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ topic: selectedTopic, difficulty: currentDifficulty, code })
     });
     showMessage(resp, 'bot');
   });
 
   hintBtn.addEventListener('click', async () => {
-    if (!selectedTopic)     return showMessage('❗️ Please select topic first', 'bot');
+    if (!syllabusLoaded) return;
+    if (!selectedTopic) return showMessage('❗️ Please select topic first', 'bot');
     if (!currentDifficulty) return showMessage('❗️ Please select difficulty first', 'bot');
-
     showMessage('💡 Hint please! 🥺', 'user');
     const hint = await fetchText(
       `/get_hint?topic=${encodeURIComponent(selectedTopic)}&difficulty=${encodeURIComponent(currentDifficulty)}`,
@@ -242,9 +270,16 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   const showHintTip = msg => {
-    const old = hintWrapper.querySelector('.hint-tooltip'); if (old) old.remove();
-    const tip = document.createElement('div'); tip.className = 'hint-tooltip'; tip.textContent = msg;
-    hintWrapper.appendChild(tip); setTimeout(() => tip.remove(), 3000);
+    const old = hintWrapper.querySelector('.hint-tooltip');
+    if (old) old.remove();
+    const tip = document.createElement('div');
+    tip.className = 'hint-tooltip';
+    tip.textContent = msg;
+    hintWrapper.appendChild(tip);
+    setTimeout(() => tip.remove(), 3000);
   };
-  hintHelp.addEventListener('click', () => { if (hintBtn.disabled) showHintTip('❗️ Send code to get a hint'); });
+
+  hintHelp.addEventListener('click', () => {
+    if (hintBtn.disabled) showHintTip('❗️ Send code to get a hint');
+  });
 });
