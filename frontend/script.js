@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const hintHelp = document.getElementById('hint-help');
   const hintWrapper = document.querySelector('.hint-wrapper');
   const topicsList = document.getElementById('topics-list');
+  const layoutBox = document.querySelector('.layout');
 
   const loginBtn = document.getElementById('login-btn');
   const loginModal = document.getElementById('login-modal');
@@ -29,10 +30,11 @@ document.addEventListener('DOMContentLoaded', () => {
   let selectedTopic = null;
   let currentDifficulty = null;
   let isAdmin = false;
-  let adminFails = parseInt(localStorage.getItem('adminFailedAttempts') || '0', 10);
   let syllabusLoaded = false;
+  let adminFails = parseInt(localStorage.getItem('adminFailedAttempts') || '0', 10);
 
   profileDiv.style.display = 'none';
+  logoutBtn.style.display = 'none';
   userInput.disabled = true;
   submitCodeBtn.disabled = true;
   hintBtn.disabled = true;
@@ -45,32 +47,32 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const hideQuote = () => quoteBlock && (quoteBlock.style.display = 'none');
 
-  const showMessage = (text, sender = 'bot') => {
-    const el = document.createElement('div');
-    el.className = `message ${sender}`;
-    el.textContent = text;
-    messagesBox.appendChild(el);
+  const showMessage = (t, s = 'bot') => {
+    const d = document.createElement('div');
+    d.className = `message ${s}`;
+    d.textContent = t;
+    messagesBox.appendChild(d);
     messagesBox.scrollTop = messagesBox.scrollHeight;
   };
 
-  const showCodeMessage = code => {
-    const el = document.createElement('div');
-    el.className = 'message user';
-    const pre = document.createElement('pre');
-    pre.textContent = code;
-    el.appendChild(pre);
-    messagesBox.appendChild(el);
+  const showCodeMessage = c => {
+    const d = document.createElement('div');
+    d.className = 'message user';
+    const p = document.createElement('pre');
+    p.textContent = c;
+    d.appendChild(p);
+    messagesBox.appendChild(d);
     messagesBox.scrollTop = messagesBox.scrollHeight;
   };
 
-  const fetchText = async (url, fallback, options = {}) => {
+  const fetchText = async (u, fb, o = {}) => {
     try {
-      const r = await fetch(url, options);
+      const r = await fetch(u, o);
       if (!r.ok) return `Error ${r.status}: ${await r.text()}`;
       const ct = r.headers.get('content-type') || '';
       return ct.includes('application/json') ? (await r.json()).message || 'OK' : await r.text();
-    } catch (err) {
-      return `Network error: ${err.message}`;
+    } catch (e) {
+      return `Network error: ${e.message}`;
     }
   };
 
@@ -79,7 +81,7 @@ document.addEventListener('DOMContentLoaded', () => {
     topicsList.innerHTML = '';
     if (!syllabusLoaded) {
       topicsList.style.display = 'none';
-      noTopicsMsg.style.display = 'block';
+      noTopicsMsg.style.display = isAdmin ? 'none' : 'block';
       userInput.disabled = true;
       submitCodeBtn.disabled = true;
       hintBtn.disabled = true;
@@ -102,7 +104,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const handleTopic = li => {
     if (!syllabusLoaded) return;
     hideQuote();
-    document.querySelectorAll('.sidebar li').forEach(el => el.classList.remove('active-topic'));
+    document.querySelectorAll('.sidebar li').forEach(e => e.classList.remove('active-topic'));
     li.classList.add('active-topic');
     selectedTopic = li.textContent.trim().toLowerCase().replace(/\s+/g, '_');
     hintBtn.disabled = true;
@@ -166,21 +168,33 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  const adjustLayoutHeight = () => {
+    const bannerHeight = adminBanner.classList.contains('hidden') ? 0 : adminBanner.offsetHeight;
+    layoutBox.style.height = `calc(100vh - 64px - ${bannerHeight}px)`;
+  };
+
   const finishLogin = (name, admin) => {
     isAdmin = admin;
     profileDiv.style.display = 'flex';
+    logoutBtn.style.display = 'inline-block';
     userNameSp.textContent = name;
     loginBtn.style.display = 'none';
     adminBanner.classList.toggle('hidden', !admin);
     uploadBtn.style.display = admin ? 'block' : 'none';
+    if (admin && !syllabusLoaded) noTopicsMsg.style.display = 'none';
     closeModal();
+    adjustLayoutHeight();
   };
 
   logoutBtn.addEventListener('click', () => {
+    isAdmin = false;
     profileDiv.style.display = 'none';
+    logoutBtn.style.display = 'none';
     loginBtn.style.display = 'inline-block';
     adminBanner.classList.add('hidden');
     uploadBtn.style.display = 'none';
+    if (!syllabusLoaded) noTopicsMsg.style.display = 'block';
+    adjustLayoutHeight();
   });
 
   uploadBtn.addEventListener('click', () => fileInput.click());
@@ -232,7 +246,7 @@ document.addEventListener('DOMContentLoaded', () => {
     showMessage('Generating task…', 'bot');
     const task = await fetchText(
       `/generate_task?topic=${encodeURIComponent(selectedTopic)}&difficulty=${encodeURIComponent(level)}`,
-      'Failed to generate the task!'
+      'Failed to generate task!'
     );
     showMessage(`📝 Task:\n${task}`, 'bot');
     hintBtn.disabled = true;
@@ -269,17 +283,19 @@ document.addEventListener('DOMContentLoaded', () => {
     showMessage(`💡 Hint: ${hint}`, 'bot');
   });
 
-  const showHintTip = msg => {
-    const old = hintWrapper.querySelector('.hint-tooltip');
-    if (old) old.remove();
-    const tip = document.createElement('div');
-    tip.className = 'hint-tooltip';
-    tip.textContent = msg;
-    hintWrapper.appendChild(tip);
-    setTimeout(() => tip.remove(), 3000);
+  const showHintTip = m => {
+    const o = hintWrapper.querySelector('.hint-tooltip');
+    if (o) o.remove();
+    const t = document.createElement('div');
+    t.className = 'hint-tooltip';
+    t.textContent = m;
+    hintWrapper.appendChild(t);
+    setTimeout(() => t.remove(), 3000);
   };
 
   hintHelp.addEventListener('click', () => {
     if (hintBtn.disabled) showHintTip('❗️ Send code to get a hint');
   });
+
+  adjustLayoutHeight();
 });
