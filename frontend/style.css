@@ -369,3 +369,32 @@ button {
 .upload-btn:hover { background: #4ade80; transform: scale(1.05); }
 
 .hidden { display: none !important; }
+#topics-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.topic-btn {
+  background: #252536;
+  border: none;
+  padding: 10px 12px;
+  color: #fff;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  text-align: left;
+  transition: background 0.2s, transform 0.2s;
+}
+
+.topic-btn:hover {
+  background: #2f2f48;
+  transform: translateX(5px);
+}
+
+.topic-btn.active-topic {
+  background: #3a3a3a;
+  color: #4ade80;
+}
