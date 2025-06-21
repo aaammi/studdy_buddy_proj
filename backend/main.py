@@ -121,9 +121,7 @@ async def get_syllabus_endpoint():
     return {"topics": topics}
 
 @app.post("/save_syllabus")
-async def save_syllabus_endpoint(syllabus: Syllabus, current_user: dict = Depends(get_current_user)):
-    if current_user.get("user_id") != "admin":
-        raise HTTPException(status_code=403, detail="Admin access required")
+async def save_syllabus_endpoint(syllabus: Syllabus):
     save_syllabus(syllabus.topics)
     return {"message": "Syllabus saved successfully"}
 
