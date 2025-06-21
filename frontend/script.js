@@ -76,42 +76,44 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
-  const updateTopicList = arr => {
-    syllabusLoaded = arr.length > 0;
-    topicsList.innerHTML = '';
-    if (!syllabusLoaded) {
-      topicsList.style.display = 'none';
-      noTopicsMsg.style.display = isAdmin ? 'none' : 'block';
-      userInput.disabled = true;
-      submitCodeBtn.disabled = true;
-      hintBtn.disabled = true;
-      diffBox.style.display = 'none';
-      selectedTopic = null;
-      return;
-    }
-    topicsList.style.display = 'block';
-    noTopicsMsg.style.display = 'none';
-    userInput.disabled = false;
-    submitCodeBtn.disabled = false;
-    arr.forEach(t => {
-      const li = document.createElement('li');
-      li.textContent = t.trim();
-      topicsList.appendChild(li);
-      li.addEventListener('click', () => handleTopic(li));
-    });
-  };
 
-  const handleTopic = li => {
-    if (!syllabusLoaded) return;
-    hideQuote();
-    document.querySelectorAll('.sidebar li').forEach(e => e.classList.remove('active-topic'));
-    li.classList.add('active-topic');
-    selectedTopic = li.textContent.trim().toLowerCase().replace(/\s+/g, '_');
+const updateTopicList = arr => {
+  syllabusLoaded = arr.length > 0;
+  topicsList.innerHTML = '';
+  if (!syllabusLoaded) {
+    topicsList.style.display = 'none';
+    noTopicsMsg.style.display = isAdmin ? 'none' : 'block';
+    userInput.disabled = true;
+    submitCodeBtn.disabled = true;
     hintBtn.disabled = true;
-    showMessage(li.textContent, 'user');
-    showMessage('Select difficulty 👇', 'bot');
-    diffBox.style.display = 'flex';
-  };
+    diffBox.style.display = 'none';
+    selectedTopic = null;
+    return;
+  }
+  topicsList.style.display = 'flex';
+  noTopicsMsg.style.display = 'none';
+  userInput.disabled = false;
+  submitCodeBtn.disabled = false;
+  arr.forEach(t => {
+    const btn = document.createElement('button');
+    btn.className = 'topic-btn';
+    btn.textContent = t.trim();
+    topicsList.appendChild(btn);
+    btn.addEventListener('click', () => handleTopic(btn));
+  });
+};
+
+const handleTopic = btn => {
+  if (!syllabusLoaded) return;
+  hideQuote();
+  document.querySelectorAll('.topic-btn').forEach(e => e.classList.remove('active-topic'));
+  btn.classList.add('active-topic');
+  selectedTopic = btn.textContent.trim().toLowerCase().replace(/\s+/g, '_');
+  hintBtn.disabled = true;
+  showMessage(btn.textContent, 'user');
+  showMessage('Select difficulty 👇', 'bot');
+  diffBox.style.display = 'flex';
+};
 
   fetch('/get_syllabus')
     .then(r => (r.ok ? r.json() : null))
