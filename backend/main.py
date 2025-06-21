@@ -147,10 +147,10 @@ async def generate_task(topic: str, difficulty: str, current_user: dict = Depend
 @app.post("/submit_code")
 async def submit_code(submission: CodeSubmission, current_user: dict = Depends(get_current_user)):
     prompt = (
-        f"Task topic: {submission.topic}\nDifficulty: {submission.difficulty}\n"
-        f"User code:\n```python\n{submission.code}\n```\n"
-        "Evaluate the code for correctness. Return a JSON object with 'correct': boolean and 'feedback': string."
-    )
+    f"Task topic: {submission.topic}\nDifficulty: {submission.difficulty}\n"
+    f"User code:\n```python\n{submission.code}\n```\n"
+    "Evaluate the code for correctness. Return a JSON object like: {\"correct\": true/false, \"feedback\": \"brief explanation\"}."
+)
     try:
         result = call_openrouter(prompt)
         evaluation = result['choices'][0]['message']['content'].strip()
