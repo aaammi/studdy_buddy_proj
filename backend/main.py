@@ -5,6 +5,8 @@ from fastapi import FastAPI, Request, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
+import json
+import re
 
 load_dotenv()
 
@@ -46,13 +48,43 @@ async def read_root(request: Request):
 async def generate_task(topic: str, difficulty: str):
     prompt = (
         f"Create one Python programming task on '{topic}' with '{difficulty}' difficulty. "
-        "Respond with only the task description. Include a sample input and expected output to illustrate the task."
+        "Respond with a JSON object with exactly these fields:\n"
+        "1. 'Task name': String\n"
+        "2. 'Task description': String\n"
+        "3. 'Sample input cases': Array of 3 sample inputs (as strings)\n"
+        "4. 'Expected outputs for the test cases': Array of 3 corresponding outputs (as strings)\n"
+        "5. 'Hints': Array of exactly 3 hint strings\n\n"
+        "Example structure:\n"
+        "{{\n"
+        "  \"Task name\": \"Task Title\",\n"
+        "  \"Task description\": \"Description here\",\n"
+        "  \"Sample input cases\": [\"input1\"\n \" input2\"\n \" input3\"]\n"
+        "  \"Expected outputs for the test cases\": [\"output1 \"\n \" output2\"\n \" output3\"]\n"
+        "  \"Hints\": [\"Hint 1\", \"Hint 2\", \"Hint 3\"]\n"
+        "}}"
     )
 
     try:
         result = call_openrouter(prompt)
-        task = result['choices'][0]['message']['content'].strip()
-        return JSONResponse({'task': task})
+        task_str = result['choices'][0]['message']['content'].strip()
+        
+        # Clean and parse JSON response
+        task_str = re.sub(r'[\x00-\x1f\x7f-\x9f]', '', task_str)
+        
+        # Remove JSON code block if present
+        if task_str.startswith('```json'):
+            task_str = task_str[7:-3].strip()
+        elif task_str.startswith('```'):
+            task_str = task_str[3:-3].strip()
+            
+        task_obj = json.loads(task_str)
+         # Validate structure
+        
+        return JSONResponse({'task': task_obj})        
+          
+
+    except Exception as e:
+        return JSONResponse({'error': str(e)}, status_code=500)
     except Exception as e:
         return JSONResponse({'error': str(e)}, status_code=500)
 
@@ -68,19 +100,35 @@ async def generate_task(topic: str, difficulty: str):
 async def evaluate_code(request: Request):
     try:
         data = await request.json()
+        print("Received data:", data)
         task_description = data.get('task', '')
         user_code = data.get('code', '')
 
         eval_prompt = (
             f"Task:\n{task_description}\n\n"
-            f"User solution:\n```python\n{user_code}\n```\n\n"
-            "Analyze the above code for correctness against the task requirements. "
-            "Respond with a JSON object with fields: 'correct': true or false, 'feedback': a brief explanation."
-        )
+            f"User message:\n {user_code}\n"
+            "Check if the user message is a code solution or question regarding task\n"
+            "If the message is a question - respond with a JSON object with fields: 'question': true, 'feedback': answer for the question. Do not give away solution, only help with understanding task requirements"
+            "If the message is a code solution - Analyze the above code for correctness against the task requirements. "
+            "Respond with a JSON object with fields: 'question': false 'correct': true or false, 'feedback': a brief explanation (only if correct is false, if true - make a compliment). Do not include additional comments or formatting"
+        ) 
 
         result = call_openrouter(eval_prompt)
         evaluation = result['choices'][0]['message']['content'].strip()
-        return JSONResponse({'evaluation': evaluation})
+        try:
+            # Remove JSON code block if present
+            if evaluation.startswith('```json'):
+                evaluation = evaluation[7:-3].strip()
+            elif evaluation.startswith('```'):
+                evaluation = evaluation[3:-3].strip()
+                
+            evaluation_obj = json.loads(evaluation)
+            return JSONResponse({'evaluation': evaluation_obj})
+        except json.JSONDecodeError:
+            return JSONResponse({'evaluation': {'error': 'Invalid evaluation format', 'raw': evaluation}})
+
+    except Exception as e:
+        return JSONResponse({'error': str(e)}, status_code=500)
 
     except Exception as e:
         return JSONResponse({'error': str(e)}, status_code=500)
