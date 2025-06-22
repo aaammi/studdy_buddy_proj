@@ -1,4 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
+  if (localStorage.getItem('isLoggedIn') === 'true') {
+        finishLogin(localStorage.getItem('userName'), localStorage.getItem('isAdmin') === 'true');
+    }
   const messagesBox = document.getElementById('messages');
   const diffBox = document.getElementById('difficulty-buttons');
   const quoteBlock = document.querySelector('.quote');
@@ -177,6 +180,9 @@ const handleTopic = btn => {
 
   const finishLogin = (name, admin) => {
     isAdmin = admin;
+    localStorage.setItem('isLoggedIn', 'true');
+    localStorage.setItem('userName', name);
+    localStorage.setItem('isAdmin', admin);
     profileDiv.style.display = 'flex';
     logoutBtn.style.display = 'inline-block';
     userNameSp.textContent = name;
