@@ -48,12 +48,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const hideQuote = () => quoteBlock && (quoteBlock.style.display = 'none');
 
   const showMessage = (t, s = 'bot') => {
-    const d = document.createElement('div');
-    d.className = `message ${s}`;
-    d.textContent = t;
-    messagesBox.appendChild(d);
-    messagesBox.scrollTop = messagesBox.scrollHeight;
-  };
+  const d = document.createElement('div');
+  d.className = `message ${s}`;
+  d.innerHTML = t.replace(/\n/g, '<br>');
+  messagesBox.appendChild(d);
+  messagesBox.scrollTop = messagesBox.scrollHeight;
+};
+
 
   const showCodeMessage = c => {
     const d = document.createElement('div');
@@ -249,7 +250,6 @@ fileInput.addEventListener('change', async e => {
     return alert('No course topics found in the uploaded file.');
   }
 
-  // 5) Обновляем интерфейс и шлём на сервер
   updateTopicList(topics);
   fetch('/save_syllabus', {
     method: 'POST',
