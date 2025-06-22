@@ -78,29 +78,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 const updateTopicList = arr => {
-  syllabusLoaded = arr.length > 0;
-  topicsList.innerHTML = '';
-  if (!syllabusLoaded) {
-    topicsList.style.display = 'none';
-    noTopicsMsg.style.display = isAdmin ? 'none' : 'block';
-    userInput.disabled = true;
-    submitCodeBtn.disabled = true;
-    hintBtn.disabled = true;
-    diffBox.style.display = 'none';
-    selectedTopic = null;
-    return;
-  }
-  topicsList.style.display = 'flex';
-  noTopicsMsg.style.display = 'none';
-  userInput.disabled = false;
-  submitCodeBtn.disabled = false;
-  arr.forEach(t => {
-    const btn = document.createElement('button');
-    btn.className = 'topic-btn';
-    btn.textContent = t.trim();
-    topicsList.appendChild(btn);
-    btn.addEventListener('click', () => handleTopic(btn));
-  });
+    syllabusLoaded = arr.length > 0;
+    topicsList.innerHTML = '';
+    if (!syllabusLoaded) {
+        topicsList.style.display = 'none';
+        noTopicsMsg.style.display = isAdmin ? 'none' : 'block';
+        userInput.disabled = true;
+        submitCodeBtn.disabled = true;
+        hintBtn.disabled = true;
+        diffBox.style.display = 'none';
+        selectedTopic = null;
+        return;
+    }
+    topicsList.style.display = 'flex';
+    noTopicsMsg.style.display = 'none';
+    userInput.disabled = false;
+    submitCodeBtn.disabled = false;
+    arr.forEach(t => {
+        const btn = document.createElement('button');
+        btn.className = 'topic-btn';
+        btn.textContent = t.trim();
+        topicsList.appendChild(btn);
+        btn.addEventListener('click', () => handleTopic(btn));
+    });
 };
 
 const handleTopic = btn => {
